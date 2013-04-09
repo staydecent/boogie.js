@@ -156,7 +156,7 @@
     function Game(id, x, y) {
       var _this = this
 
-      this.canvas = document.createElement('<canvas>')
+      this.canvas = document.createElement('canvas')
       this.canvas.id = 'id'
       document.body.appendChild(this.canvas)
 
