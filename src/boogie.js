@@ -83,7 +83,7 @@
       var actionLen = this._released.length,
           action
 
-      for (var i = 0 i < actionLen i++) {
+      for (var i = 0; i < actionLen; i++) {
         action = this._released[i]
         this._down[action] = false
       }
