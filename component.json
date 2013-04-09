@@ -1,0 +1,13 @@
+{
+  "name": "boogie.js",
+  "version": "1.0.0",
+  "main": "src/boogie.js",
+  "dependencies": {
+    "underscore": "~1.4.4"
+  },
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "components"
+  ]
+}
