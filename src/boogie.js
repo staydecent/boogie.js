@@ -153,8 +153,11 @@
       window.msCancelAnimationFrame || 
       window.clearTimeout
 
-    function Game(id, x, y) {
+    function Game(id, width, height) {
       var _this = this
+
+      width = width || window.innerWidth
+      height = height || window.innerHeight
 
       this.canvas = document.createElement('canvas')
       this.canvas.id = 'id'
@@ -164,8 +167,8 @@
       this.bindControls()
 
       window.onresize = function(e) {
-        _this.canvas.width = window.innerWidth
-        _this.canvas.height = window.innerHeight
+        _this.canvas.width = width
+        _this.canvas.height = height
         _this.width = _this.canvas.width
         _this.height = _this.canvas.height
       }
