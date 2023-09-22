@@ -1,0 +1,30 @@
+{
+  "name": "boogie.js",
+  "version": "0.0.0",
+  "description": "boogie.js =========",
+  "main": "dist/boogie.js",
+  "module": "dist/boogie.m.js",
+  "source": "src/boogie.js",
+  "scripts": {
+    "prebuild": "prettier --write src/",
+    "build": "microbundle",
+    "prepublishOnly": "npm run build",
+    "pretest": "npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/staydecent/boogie.js.git"
+  },
+  "keywords": [],
+  "author": "Adrian Unger <npm@staydecent.ca>",
+  "license": "BSD 2-Clause",
+  "bugs": {
+    "url": "https://github.com/staydecent/boogie.js/issues"
+  },
+  "homepage": "https://github.com/staydecent/boogie.js#readme",
+  "devDependencies": {
+    "microbundle": "0.15.1",
+    "prettier": "3.0.3"
+  }
+}
