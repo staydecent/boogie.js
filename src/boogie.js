@@ -1,6 +1,6 @@
-export const rand = (min, max) => Math.random() * (max - min) + min;
+let _called = false;
 
-export const input = {
+const input = {
   M_LEFT: -1,
   M_MIDDLE: -2,
   M_RIGHT: -3,
@@ -116,186 +116,163 @@ export const input = {
   },
 };
 
-let store = createStore({ _s: 0 });
-
-export function scene(val) {
-  let s = store.get()._s;
-  if (val != null) {
-    store.set({ _s: val });
+export function boogie(initialState, debug) {
+  if (_called) {
+    throw new E("boogie() can only be invoked once!");
   }
-  return store.get()._s;
-}
+  _called = true;
 
-export function boogie(id, w, h) {
-  // setup canvas
-  let width = w || window.innerWidth;
-  let height = h || window.innerHeight;
+  const store = createStore(Object.assign({}, initialState, {scene: 0}));
 
-  const canvas = document.getElementById(id);
-  const context = canvas.getContext("2d");
+  // game loop state
+  // underscores are used to denote parent scope
+  let _scenes = [];
+  let _running = false;
+  let _frameRequest = null;
+  let _lastStep = null;
 
-  // game state
-  let running = false;
-  let frameRequest = null;
-  let lastStep = null;
-  let _update = null;
-  let _draw = null;
-  let _onStart = null;
+  return {
+    scene,
+    input,
+    start,
+    stop,
+    store,
+  }
 
-  // event handling
-  canvas.onmousemove = input.onmousemove.bind(input);
-  canvas.onmousedown = input.onmousedown.bind(input);
-  canvas.onmouseup = input.onmouseup.bind(input);
-  canvas.onmousewheel = input.onmousewheel.bind(input);
-  canvas.oncontextmenu = input.oncontextmenu.bind(input);
+  function scene(canvas, w, h) {
+    const context = canvas.getContext("2d");
 
-  window.addEventListener("keydown", input.onkeydown.bind(input));
-  window.addEventListener("keyup", input.onkeyup.bind(input));
+    let width = w || window.innerWidth;
+    let height = h || window.innerHeight;
 
-  window.onblur = () => stop();
-  window.onfocus = () => start();
-  window.onresize = () => {
-    canvas.width = width;
-    canvas.height = height;
-    width = canvas.width;
-    height = canvas.height;
-  };
+    let entities = [];
 
-  window.onresize();
+    window.onresize = () => {
+      canvas.width = width;
+      canvas.height = height;
+      width = canvas.width;
+      height = canvas.height;
+    };
 
-  start();
+    window.onresize();
+
+    _scenes.push((dt, gameState) => {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+
+      // run all entity updates, merge returned gameState
+      let newState = entities.reduce(
+        (acc, e) => {
+          Object.assign(acc, e.update(dt, gameState, input));
+          e.draw(context, gameState);
+          return acc;
+        },
+        gameState
+      );
+
+      return newState;
+    });
+
+    return {
+      add(entity) {
+        if (entity.key == null) {
+          throw E("Entity must contain a key.");
+        }
+
+        const keys = Object.keys(entity);
+        const entityState = {};
+        for (let x = 0; x < keys.length; x++) {
+          let k = keys[x];
+          if (k === "key" || typeof entity[k] === 'function') {
+            continue;
+          }
+          entityState[k] = entity[k];
+        }
+
+        debug && console.log('adding entity', entityState);
+        store.set({ [entity.key]: entityState });
+
+        entities.push(entity);
+      }
+    }
+  }
 
   function step() {
     let now = Date.now();
-    let dt = (now - lastStep) / 1000;
-    lastStep = now;
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    _update && _update(dt);
-    _draw && _draw(context);
+    let dt = (now - _lastStep) / 1000;
+    _lastStep = now;
+
+    let gameState = store.get();
+    let newState = _scenes.reduce(
+      (acc, curr) => Object.assign(acc, curr(dt, gameState)),
+      gameState
+    );
+
+    store.set(newState);
+
     input.clearPressed();
   }
 
   function start() {
-    if (running) return;
+    if (_running) return;
 
     let s = () => {
       step();
-      return (frameRequest = requestAnimationFrame(s));
+      return (_frameRequest = requestAnimationFrame(s));
     };
 
-    running = true;
-    lastStep = Date.now();
-    frameRequest = requestAnimationFrame(s);
-    _onStart && _onStart(im);
+    _running = true;
+    _lastStep = Date.now();
+    _frameRequest = requestAnimationFrame(s);
   }
 
   function stop() {
-    if (frameRequest) {
-      cancelAnimationFrame(frameRequest);
+    if (_frameRequest) {
+      cancelAnimationFrame(_frameRequest);
     }
-    frameRequest = null;
-    running = false;
+    _frameRequest = null;
+    _running = false;
+    debug && console.log(store.get());
   }
-
-  return {
-    onStart,
-    update,
-    draw,
-    store,
-  };
-
-  function onStart(cb) {
-    _onStart = cb;
-  }
-
-  function update(cb) {
-    _update = cb;
-  }
-
-  function draw(cb) {
-    _draw = cb;
-  }
-}
-
-export function entity(key, _state) {
-  let state = Object.assign(
-    {
-      key,
-      alive: true,
-      color: "#000",
-      x: 0,
-      y: 0,
-      w: 16,
-      h: 16,
-      direction: "s",
-      speed: 5,
-    },
-    _state,
-  );
-
-  store.set({ [key]: state });
-
-  function Entity() {}
-
-  Entity.get = function get() {
-    return store.get()[key];
-  };
-
-  Entity.set = function set(state) {
-    return store.set({ [key]: state });
-  };
-
-  Entity.draw = function draw(context) {
-    let state = store.get()[key];
-    context.fillStyle = state.color;
-    context.fillRect(state.x, state.y, state.w, state.h);
-  };
-
-  return Entity;
 }
 
 function createStore(initialState) {
   let state = initialState || {};
   let listeners = [];
 
-  return {
-    subscribe,
-    unsubscribe,
-    get,
-    set,
-    clear,
-  };
-
-  function subscribe(listener) {
-    if (typeof listener !== "function") {
-      throw new E("listener must be a function");
-    }
-    listeners.push(listener);
-    return () => unsubscribe(listener);
-  }
-
-  function unsubscribe(listener) {
-    if (!listener) return;
-    const idx = listeners.findIndex((l) => l === listener);
-    idx > -1 && listeners.splice(idx, 1);
-  }
+  return { get, set, on, off };
 
   function get() {
     return typeof state === "object" ? Object.assign({}, state) : state;
   }
 
-  function set(newState) {
-    Object.assign(state, newState);
-
-    let _state = get();
+  function set(providedState) {
+    const prevState = Object.assign({}, state);
+    const newState = Object.assign({}, state, providedState);
     for (let x = 0; x < listeners.length; x++) {
-      listeners[x](_state);
+      listeners[x](prevState, newState);
     }
-
-    return _state;
+    state = newState;
   }
 
-  function clear(newState) {
-    state = Object.assign({}, newState);
+  function on(listener) {
+    if (typeof listener !== "function") {
+      throw new E("listener must be a function");
+    }
+    listeners.push(listener);
+    return () => off(listener);
   }
+
+  function off(listener) {
+    if (!listener) return;
+    const idx = listeners.findIndex((l) => l === listener);
+    idx > -1 && listeners.splice(idx, 1);
+  }
+}
+
+function E(message) {
+  this.message = message;
+  this.name = "BoogieException";
+  this.toString = function () {
+    return this.name + ": " + this.message;
+  };
 }
