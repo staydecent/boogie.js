@@ -200,7 +200,8 @@ export function boogie(initialState, debug) {
 
     let gameState = store.get();
     let newState = _scenes.reduce(
-      (acc, curr) => Object.assign(acc, curr(dt, gameState)),
+      (acc, scene) =>
+        scene.paused ? acc : Object.assign(acc, scene(dt, gameState)),
       gameState,
     );
 
