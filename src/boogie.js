@@ -122,7 +122,7 @@ export function boogie(initialState, debug) {
   }
   _called = true;
 
-  const store = createStore(Object.assign({}, initialState, {scene: 0}));
+  const store = createStore(Object.assign({}, initialState, { scene: 0 }));
 
   // game loop state
   // underscores are used to denote parent scope
@@ -137,7 +137,7 @@ export function boogie(initialState, debug) {
     start,
     stop,
     store,
-  }
+  };
 
   function scene(canvas, w, h) {
     const context = canvas.getContext("2d");
@@ -160,14 +160,11 @@ export function boogie(initialState, debug) {
       context.clearRect(0, 0, canvas.width, canvas.height);
 
       // run all entity updates, merge returned gameState
-      let newState = entities.reduce(
-        (acc, e) => {
-          Object.assign(acc, e.update(dt, gameState, input));
-          e.draw(context, gameState);
-          return acc;
-        },
-        gameState
-      );
+      let newState = entities.reduce((acc, e) => {
+        Object.assign(acc, e.update(dt, gameState, input));
+        e.draw(context, gameState);
+        return acc;
+      }, gameState);
 
       return newState;
     });
@@ -182,18 +179,18 @@ export function boogie(initialState, debug) {
         const entityState = {};
         for (let x = 0; x < keys.length; x++) {
           let k = keys[x];
-          if (k === "key" || typeof entity[k] === 'function') {
+          if (k === "key" || typeof entity[k] === "function") {
             continue;
           }
           entityState[k] = entity[k];
         }
 
-        debug && console.log('adding entity', entityState);
+        debug && console.log("adding entity", entityState);
         store.set({ [entity.key]: entityState });
 
         entities.push(entity);
-      }
-    }
+      },
+    };
   }
 
   function step() {
@@ -204,7 +201,7 @@ export function boogie(initialState, debug) {
     let gameState = store.get();
     let newState = _scenes.reduce(
       (acc, curr) => Object.assign(acc, curr(dt, gameState)),
-      gameState
+      gameState,
     );
 
     store.set(newState);
