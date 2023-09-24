@@ -1,6 +1,6 @@
 {
   "name": "boogie.js",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "boogie.js =========",
   "main": "dist/boogie.js",
   "module": "dist/boogie.m.js",
